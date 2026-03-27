@@ -1,34 +1,42 @@
 # Coworking Analytics Microservice Deployment
 
-## This project deploys a Python analytics application and a PostgreSQL database to Kubernetes on AWS.  
-
+This project deploys a Python analytics application and a PostgreSQL database to Kubernetes on AWS.  
 The application is containerized with Docker, built automatically with AWS CodeBuild, stored in Amazon ECR, and deployed to Kubernetes using manifest files in this repository.  
+The project ensures that deployment is secure, scalable, and follows best practices for containerized workloads.  
 
-The deployment consists of two main services: a PostgreSQL database running inside the Kubernetes cluster and a Python Flask analytics application exposed through a Kubernetes `LoadBalancer` service.  
+## Deployment Architecture
 
-The application reads non-sensitive configuration from a Kubernetes ConfigMap and sensitive values from a Kubernetes Secret.  
+The deployment consists of two main services: PostgreSQL Database and Python Flask Analytics Application.  
+PostgreSQL runs inside the Kubernetes cluster and is exposed internally through `postgresql-service` on port `5432`.  
+The analytics application is exposed externally through a Kubernetes `LoadBalancer` service on port `5153`.  
+Non-sensitive values are stored in a Kubernetes ConfigMap, while sensitive values like credentials are stored securely in a Kubernetes Secret.  
 
-This keeps the deployment flexible and avoids hardcoding credentials in the container image.  
-The build pipeline uses AWS CodeBuild to build the Docker image from the source code in the `analytics/` directory.  
+## Build and Release Process
 
-After a successful build, CodeBuild authenticates with Amazon ECR and pushes the image to the repository.  
+AWS CodeBuild builds the Docker image from the `analytics/Dockerfile` and automates the container build and push process using `buildspec.yaml`.  
+CodeBuild authenticates with Amazon ECR to push the image and stores versioned application images for explicit releases.  
+To deploy, the image tag in Kubernetes manifests can be updated before applying resources with `kubectl`.  
+Kubernetes resources include deployments for analytics and PostgreSQL, services, ConfigMap, Secret, and persistent volumes stored in the `deployments/` directory.  
 
-Amazon ECR stores the versioned application images so Kubernetes releases are explicit and repeatable.  
+## Application Endpoints
 
-To release a new version of the application, the source code is updated, committed, and pushed to GitHub.  
+The analytics application exposes the following endpoints:
+- `/api/reports/daily_usage`
+- `/api/reports/user_visits`  
 
-AWS CodeBuild is then used to build and push a new Docker image to Amazon ECR.  
-If needed, the image tag is updated in the Kubernetes deployment manifest before redeployment.  
-The Kubernetes manifests are then applied with `kubectl apply -f deployments/`.  
-The application is packaged using the Dockerfile in `analytics/Dockerfile`.  
-The image uses a Python base image, installs the required dependencies, and starts the Flask application on port `5153`.  
+Both endpoints return valid JSON responses and read data from PostgreSQL.  
 
-AWS CodeBuild automates the container build and push process using the `buildspec.yaml` file.  
-The Kubernetes resources include the analytics deployment and service, ConfigMap, Secret, PostgreSQL deployment and service, and persistent volume resources stored in the `deployments/` directory.  
+## Validation
 
-The analytics application is exposed externally on port `5153`, while PostgreSQL is exposed internally through `postgresql-service` on port `5432`.  
-The deployment was validated by confirming that pods were running, services were created, and the analytics application responded correctly. 
+Validation confirmed pods and services were running successfully, and CloudWatch logs verified the application startup.  
+The deployment operates securely by preventing hardcoded values and validating the application behavior in multiple areas.  
 
-The `/api/reports/daily_usage` and `/api/reports/user_visits` endpoints both returned valid JSON responses, and CloudWatch logs showed the application starting correctly without errors.  
+## Cost-Saving Suggestions
 
-The submission includes the application source code, `buildspec.yaml`, the `deployments/` directory with Kubernetes YAML files, `README.md`, and the `screenshots/` folder with project evidence.
+Costs can be reduced by using smaller worker nodes for development environments and removing unused AWS resources after testing.  
+Cleaning up old container images in ECR also reduces costs, similar to scaling clusters only as needed.  
+
+## Contents
+
+The README has been structured along with application code, build pipeline instructions, Kubernetes manifests, and screenshots of project validation.  
+Submission includes required files for deployment, validation logs, and evidence stored in a specific repository folder.  
