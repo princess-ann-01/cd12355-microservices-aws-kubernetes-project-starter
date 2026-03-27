@@ -1,0 +1,6 @@
+#!/home/princessacabenoja/projects/cd12355-microservices-aws-kubernetes-project-starter/analytics/venv/bin/python
+import sys
+from flask.cli import main
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(main())
